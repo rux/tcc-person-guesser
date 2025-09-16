@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess Who - Pub Voting Game</title>
+    <style>
+        body {
+            background: url('background.jpg') no-repeat center center;
+            background-size: cover; /* Preserves aspect ratio, fills screen */
+            background-attachment: scroll; /* 'fixed' can cause issues on some mobile devices */
+            font-family: Comic Sans, sans-serif; padding: 10px; max-width: 600px; margin: auto; text-align: center; }
+        img { max-width: 100%; height: auto; margin-bottom: 20px; }
+        select, button {
+            width: 100%;
+            font-size: 1.5em;
+            padding: 16px;
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 20px;
+        }
+        button { margin-top: 20px; }
+        h2 {
+            font-size: 2em; /* bigger text */
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .score { font-size: 72px; margin-top: 20px; animation: blinkAndMove 2s infinite alternate, pulsingZoom 2.5s infinite;}
+
+@keyframes blinkAndMove {
+  0% {
+    opacity: 1;
+    color: red;
+    transform: rotate(0deg);
+  }
+  25% {
+    opacity: 0.5;
+    color: yellow;
+    transform: rotate(10deg);
+  }
+  50% {
+    opacity: 1;
+    color: lime;
+    transform: rotate(-10deg);
+  }
+  75% {
+    color: cyan;
+    transform: rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    color: red;
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes pulsingZoom {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.6);
+  }
+  50% {
+    transform: scale(0.8);
+  }
+  75% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+    </style>
+</head>
+<body>
+
+<h2>Name the Reprobate</h2>
+
+<div id="gameArea">
+    <img id="currentImage" src="" alt="Guess the Person">
+    <select id="guessDropdown"></select>
+    <button onclick="lockInGuess()">LOCK IN THIS GUESS</button>
+</div>
+
+<div id="scoreArea" style="display:none;">
+    <h2>You scored</h2>
+    <div class="score" id="finalScore"></div>
+
+    <div id="finalPhotos" style="display:none; margin-top:20px;"></div>
+</div>
+
+<script>
+const people = ['Pilko', 'Baldy', 'Maximilian', 'Russ', 'Chittock', 'Tiivi', 'Birdman', 'Skel', 'Stiv'];
+let remainingOptions = [...people];
+let guesses = [];
+
+let images = [...people];
+shuffleArray(images);
+
+let currentIndex = 0;
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function setupNextGuess() {
+    if (currentIndex >= images.length) {
+        submitGuesses();
+        return;
+    }
+
+    document.getElementById('currentImage').src = images[currentIndex] + '.jpg';
+
+    const dropdown = document.getElementById('guessDropdown');
+    dropdown.innerHTML = '<option value="">WHO DIS?</option>';
+
+    remainingOptions.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        dropdown.appendChild(option);
+    });
+}
+
+function lockInGuess() {
+    const selectedGuess = document.getElementById('guessDropdown').value;
+
+    if (!selectedGuess) {
+        alert('Select a guess, fool!');
+        return;
+    }
+
+    guesses.push({ image: images[currentIndex], guess: selectedGuess });
+    remainingOptions = remainingOptions.filter(name => name !== selectedGuess);
+
+    currentIndex++;
+    setupNextGuess();
+}
+
+function submitGuesses() {
+    let score = guesses.filter(g => g.image === g.guess).length;
+
+    document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('scoreArea').style.display = 'block';
+    document.getElementById('finalScore').textContent = score + ' / ' + people.length;
+
+
+    // Show final photos
+    showFinalPhotos();
+}
+
+setupNextGuess();
+
+
+function showFinalPhotos() {
+    const finalPhotos = document.getElementById('finalPhotos');
+    finalPhotos.innerHTML = '';
+    finalPhotos.style.display = 'block';
+
+    // Display each of the 9 images in alphabetical order
+    const sortedPeople = [...people].sort();
+
+    sortedPeople.forEach(person => {
+        const img = document.createElement('img');
+        // The default jpg
+        img.src = person + '.jpg';
+
+        // Find the guess object for this person
+        const guessObj = guesses.find(g => g.image === person);
+        // Determine if correct
+        const isCorrect = guessObj && guessObj.guess === person;
+
+        // Add a thick border, green if correct, red if not
+        img.style.border = '8px solid ' + (isCorrect ? 'green' : 'red');
+        img.style.marginBottom = '20px';
+        
+        // Stash references for toggling
+        img.dataset.normal = person + '.jpg';
+        img.dataset.source = person + '_source.jpg';
+
+        // Toggle function
+        img.onclick = function() {
+            if (img.src.includes('source')) {
+                img.src = img.dataset.normal;
+            } else {
+                img.src = img.dataset.source;
+            }
+        };
+
+        finalPhotos.appendChild(img);
+    });
+}
+</script>
+
+</body>
+</html>
